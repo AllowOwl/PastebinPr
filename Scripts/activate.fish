@@ -75,7 +75,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV 'D:\work\Git_Projects\PastebinPr'
+set -gx VIRTUAL_ENV 'D:\SomeWork\Git_projects\PastebinPr'
 
 # https://github.com/fish-shell/fish-shell/issues/436 altered PATH handling
 if test (string sub -s 1 -l 1 $FISH_VERSION) -lt 3

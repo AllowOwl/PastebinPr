@@ -5,7 +5,7 @@
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-@set "VIRTUAL_ENV=D:\work\Git_Projects\PastebinPr"
+@set "VIRTUAL_ENV=D:\SomeWork\Git_projects\PastebinPr"
 
 @set "VIRTUAL_ENV_PROMPT="
 @if NOT DEFINED VIRTUAL_ENV_PROMPT (
