@@ -19,7 +19,7 @@ def register_view(request):
     return render(request, 'accounts/register.html', {'form': form})
 
 def login_view(request):
-    """Вход пользователя - УБЕДИТЕСЬ ЧТО ВСЕ ВЕТКИ ВОЗВРАЩАЮТ HttpResponse"""
+    """ВСЕ ВЕТКИ ДОЛЖНЫ ВОЗВРАЩАЮТ HttpResponse"""
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
