@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ topic.title }} - Pastebin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .topic-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .topic-header h1 {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .topic-header .description {
+            color: #718096;
+            font-size: 1.2em;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .topic-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            color: #a0aec0;
+            font-size: 0.9em;
+        }
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pastes-count {
+            background: #4f46e5;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+        .pastes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .paste-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #4f46e5;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .paste-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        .paste-card h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            line-height: 1.4;
+        }
+        .paste-content {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .paste-preview {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #4a5568;
+            margin-bottom: 15px;
+            max-height: 120px;
+            overflow: hidden;
+            position: relative;
+        }
+        .paste-preview::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, #f7fafc);
+        }
+        .paste-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #a0aec0;
+            font-size: 0.9em;
+            margin-top: auto;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .author-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+        .stats {
+            display: flex;
+            gap: 15px;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .empty-state {
+            background: white;
+            border-radius: 15px;
+            padding: 60px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .empty-state h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .empty-state p {
+            color: #718096;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+        .syntax-badge {
+            background: #e2e8f0;
+            color: #4a5568;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .user-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .user-info {
+            text-align: center;
+        }
+        .user-info h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Навигация -->
+        <div class="navigation">
+            <a href="{% url 'home' %}" class="btn btn-secondary">← На главную</a>
+            <a href="{% url 'paste_list' %}" class="btn btn-secondary">Все пасты</a>
+        </div>
+
+        <!-- Шапка темы -->
+        <div class="header">
+            <div class="topic-header">
+                <h1>{{ topic.title }}</h1>
+                {% if topic.description %}
+                    <p class="description">{{ topic.description }}</p>
+                {% endif %}
+                <div class="topic-meta">
+                    <div class="meta-item">
+                        <span>Создана: {{ topic.created_at|date:"d.m.Y" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="pastes-count">{{ pastes|length }} паст</span>
+                    </div>
+                    <div class="meta-item">
+                        <span>Обновлена: {{ topic.updated_at|date:"d.m.Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок пользователя -->
+        <div class="user-section">
+            <div class="user-info">
+                {% if user.is_authenticated %}
+                    <h3>Привет, {{ user.username }}!</h3>
+                    <p>Вы просматриваете пасты в теме "{{ topic.title }}"</p>
+                    <div class="auth-buttons">
+                        <a href="{% url 'profile' %}" class="btn btn-primary">Мой профиль</a>
+                        <a href="#" class="btn btn-secondary">Создать пасту</a>
+                    </div>
+                {% else %}
+                    <h3>Войдите в систему</h3>
+                    <p>Чтобы создавать свои пасты в этой теме</p>
+                    <div class="auth-buttons">
+                        <a href="{% url 'login' %}" class="btn btn-primary">Войти</a>
+                        <a href="{% url 'register' %}" class="btn btn-secondary">Зарегистрироваться</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Список паст -->
+        <div class="pastes-section">
+            {% if pastes %}
+                <h2 style="color: white; text-align: center; margin-bottom: 25px; font-size: 2em;">
+                    Пасты в теме "{{ topic.title }}"
+                </h2>
+                <div class="pastes-grid">
+                    {% for paste in pastes %}
+                    <div class="paste-card">
+                        <div>
+                            <h3>{{ paste.title }}</h3>
+                            
+                            {% if paste.content|length > 200 %}
+                                <div class="paste-preview">
+                                    {{ paste.content|truncatechars:200 }}
+                                </div>
+                            {% else %}
+                                <div class="paste-content">
+                                    {{ paste.content|linebreaksbr }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="paste-meta">
+                            <div class="author-info">
+                                <div class="author-avatar">
+                                    {{ paste.author.username|first|upper }}
+                                </div>
+                                <span>{{ paste.author.username }}</span>
+                            </div>
+                            <div class="stats">
+                                <div class="stat">
+                                    {{ paste.views_count }}
+                                </div>
+                                <div class="syntax-badge">
+                                    {{ paste.syntax }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <a href="{% url 'paste_detail' paste.id %}" class="btn btn-primary" style="margin-top: 15px; display: block; text-align: center;">
+                            Читать полностью
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>Пока нет паст</h3>
+                    <p>В теме "{{ topic.title }}" пока нет опубликованных паст</p>
+                    {% if user.is_authenticated %}
+                        <p>Будьте первым, кто добавит пасту в эту тему!</p>
+                        <a href="#" class="btn btn-primary">Создать первую пасту</a>
+                    {% else %}
+                        <p>Войдите в систему, чтобы создать первую пасту</p>
+                        <a href="{% url 'login' %}" class="btn btn-primary">Войти и создать</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Статистика темы -->
+        {% if pastes %}
+        <div style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <h3 style="color: #2d3748; margin-bottom: 15px; text-align: center;">Статистика темы</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: center;">
+                <div>
+                    <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">{{ pastes|length }}</div>
+                    <div style="color: #718096;">Всего паст</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
+                        {{ pastes|dictsortreversed:"views_count"|first.views_count }}
+                    </div>
+                    <div style="color: #718096;">Макс. просмотров</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
+                        {% with authors=pastes|dictsort:"author" %}
+                            {{ authors|length }}
+                        {% endwith %}
+                    </div>
+                    <div style="color: #718096;">Уникальных авторов</div>
+                </div>
+                <div>
+                    <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
+                        {{ pastes|dictsortreversed:"created_at"|first.created_at|date:"d.m.Y" }}
+                    </div>
+                    <div style="color: #718096;">Последняя паста</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

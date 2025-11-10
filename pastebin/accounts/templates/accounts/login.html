@@ -1,28 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Вход в систему</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему - Pastebin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+        .messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .alert.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+        .alert.success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+        .alert.info {
+            background: #bee3f8;
+            color: #2c5aa0;
+            border: 1px solid #90cdf4;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+        .links {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .links a {
+            color: #4f46e5;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+        }
+        .errorlist li {
+            color: #e53e3e;
+            font-size: 14px;
+            background: #fed7d7;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Вход в систему</h2>
-    
-    {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-                <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>
-                    {{ message }}
+    <div class="container">
+        <div class="login-card">
+            <!-- Шапка -->
+            <div class="header">
+                <h1>🔐 Вход</h1>
+                <p>Войдите в свой аккаунт Pastebin</p>
+            </div>
+
+            <!-- Сообщения -->
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            {% endif %}
+
+            <!-- Форма входа -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Поле username -->
+                <div class="form-group">
+                    <label for="id_username">Имя пользователя:</label>
+                    <input type="text" 
+                           name="username" 
+                           id="id_username" 
+                           class="form-control" 
+                           placeholder="Введите ваше имя пользователя"
+                           required
+                           autofocus>
+                    {% if form.username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.username.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Поле password -->
+                <div class="form-group">
+                    <label for="id_password">Пароль:</label>
+                    <input type="password" 
+                           name="password" 
+                           id="id_password" 
+                           class="form-control" 
+                           placeholder="Введите ваш пароль"
+                           required>
+                    {% if form.password.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Общие ошибки формы -->
+                {% if form.non_field_errors %}
+                    <div class="form-group">
+                        <ul class="errorlist">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Войти</button>
+            </form>
+
+            <!-- Ссылки -->
+            <div class="links">
+                <p style="margin-bottom: 15px; color: #718096;">
+                    Нет аккаунта? 
+                    <a href="{% url 'register' %}">Зарегистрируйтесь</a>
+                </p>
+                <a href="{% url 'home' %}" class="btn btn-secondary">
+                    ← На главную
+                </a>
+            </div>
         </div>
-    {% endif %}
-    
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Войти</button>
-    </form>
-    
-    <p>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрируйтесь</a></p>
-    <a href="{% url 'home' %}">На главную</a>
+    </div>
 </body>
 </html>
