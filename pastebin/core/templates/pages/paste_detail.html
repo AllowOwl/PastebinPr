@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ paste.title }} - Pastebin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .paste-content {
+            background: white;
+            border-radius: 15px;
+            padding: 0;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .paste-header {
+            background: #f8fafc;
+            padding: 25px 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .paste-title {
+            color: #2d3748;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        .paste-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            background: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .author-details h4 {
+            color: #2d3748;
+            margin-bottom: 2px;
+        }
+        .author-details .date {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .paste-stats {
+            display: flex;
+            gap: 20px;
+            color: #64748b;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .paste-body {
+            padding: 30px;
+        }
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .like-btn {
+            background: {% if user_liked %}#dc2626{% else %}#f1f5f9{% endif %};
+            color: {% if user_liked %}white{% else %}#475569{% endif %};
+        }
+        .like-btn:hover {
+            background: {% if user_liked %}#b91c1c{% else %}#e2e8f0{% endif %};
+        }
+        .comments-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            color: #2d3748;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .comment-form {
+            margin-bottom: 30px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #f8fafc;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        .comments-list {
+            space-y: 20px;
+        }
+        .comment {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .comment-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .comment-date {
+            color: #64748b;
+            font-size: 0.9em;
+        }
+        .comment-content {
+            color: #4a5568;
+            line-height: 1.5;
+        }
+        .empty-comments {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        .topic-badge {
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        .syntax-badge {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-family: 'Courier New', monospace;
+        }
+        @media (max-width: 768px) {
+            .paste-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .actions {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Навигация -->
+        <div class="navigation">
+            <a href="{% url 'paste_list' %}" class="btn btn-secondary">← Все пасты</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'create_paste' %}" class="btn btn-primary">Новая паста</a>
+            {% endif %}
+        </div>
+
+        <!-- Контент пасты -->
+        <div class="paste-content">
+            <div class="paste-header">
+                <h1 class="paste-title">{{ paste.title }}</h1>
+                <div class="paste-meta">
+                    <div class="author-info">
+                        <div class="author-avatar">
+                            {{ paste.author.username|first|upper }}
+                        </div>
+                        <div class="author-details">
+                            <h4>{{ paste.author.username }}</h4>
+                            <div class="date">
+                                {{ paste.created_at|date:"d.m.Y H:i" }}
+                                {% if paste.topic %}
+                                    • <span class="topic-badge">{{ paste.topic.title }}</span>
+                                {% endif %}
+                                • <span class="syntax-badge">{{ paste.syntax }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="paste-stats">
+                        <div class="stat">{{ paste.views_count }}</div>
+                        <div class="stat">{{ likes_count }}</div>
+                        <div class="stat">{{ comments|length }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paste-body">
+                <div class="code-block">{{ paste.content }}</div>
+                
+                <div class="actions">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'like_paste' paste.id %}" class="btn like-btn">
+                            {% if user_liked %}Убрать лайк{% else %}Лайк{% endif %}
+                        </a>
+                    {% endif %}
+                    <button onclick="copyToClipboard()" class="btn btn-secondary">Копировать</button>
+                    <a href="#" class="btn btn-secondary">Поделиться</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Комментарии -->
+        <div class="comments-section">
+            <h2 class="section-title">Комментарии ({{ comments|length }})</h2>
+
+            <!-- Форма комментария -->
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'add_comment' paste.id %}" class="comment-form">
+                    {% csrf_token %}
+                    <textarea name="content" class="form-input" 
+                              placeholder="Оставьте комментарий..."></textarea>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 10px;">
+                        Отправить комментарий
+                    </button>
+                </form>
+            {% else %}
+                <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                    <p style="color: #0369a1; margin-bottom: 10px;">
+                        Войдите в систему, чтобы оставлять комментарии
+                    </p>
+                    <a href="{% url 'login' %}" class="btn btn-primary">Войти</a>
+                </div>
+            {% endif %}
+
+            <!-- Список комментариев -->
+            <div class="comments-list">
+                {% for comment in comments %}
+                    <div class="comment">
+                        <div class="comment-header">
+                            <div class="comment-author">
+                                <div class="author-avatar" style="width: 30px; height: 30px; font-size: 0.8em;">
+                                    {{ comment.author.username|first|upper }}
+                                </div>
+                                {{ comment.author.username }}
+                            </div>
+                            <div class="comment-date">
+                                {{ comment.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+                        <div class="comment-content">
+                            {{ comment.content|linebreaksbr }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-comments">
+                        <p>Пока нет комментариев</p>
+                        <p style="color: #9ca3af; margin-top: 5px;">Будьте первым, кто оставит комментарий!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const text = `{{ paste.content }}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Текст скопирован в буфер обмена!');
+            });
+        }
+    </script>
+</body>
+</html>

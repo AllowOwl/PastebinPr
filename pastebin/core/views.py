@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, Http404
 from django.db.models import Q, Count
+from django.utils import timezone
 from .models import Paste, Topic, Like, Comment
+from .forms import PasteForm, CommentForm
 
 def home(request):
     """Главная страница со списком тем и информацией о пользователе"""
@@ -53,7 +55,7 @@ def paste_list(request):
             Q(author__username__icontains=search_query)
         )
     
-    sort_by = request.GET.sort('sort', 'newest')
+    sort_by = request.GET.get('sort', 'newest')
     if sort_by == 'likes':
         pastes = pastes.order_by('-views_count')
     elif sort_by == 'likes':
@@ -102,6 +104,41 @@ def paste_detail(request, paste_id):
         'likes_count': paste.likes.count(),
     }
     return render(request, 'pages/paste_detail.html', context)
+
+@login_required
+def create_paste(request):
+    """Создание новой пасты"""
+    if request.method == 'POST':
+        form = PasteForm(request.POST)
+        if form.is_valid():
+            paste = form.save(commit=False)
+            paste.author = request.user
+            
+            # Обработка срока действия
+            expires_at = form.cleaned_data.get('expires_at')
+            if expires_at:
+                paste.expires_at = expires_at
+            
+            paste.save()
+            messages.success(request, 'Паста успешно создана!')
+            return redirect('paste_detail', paste_id=paste.id)
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+    else:
+        form = PasteForm()
+    
+    # Получаем популярные темы для подсказок
+    popular_topics = Topic.objects.filter(
+        is_public=True
+    ).annotate(
+        paste_count=Count('pastes')
+    ).order_by('-paste_count')[:10]
+    
+    context = {
+        'form': form,
+        'popular_topics': popular_topics,
+    }
+    return render(request, 'pages/create_paste.html', context)
 
 @login_required
 def like_paste(request, paste_id):

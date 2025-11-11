@@ -76,23 +76,20 @@ class Paste(models.Model):
         return self.visibility == self.Visibility.PUBLIC
     
     def is_expired(self):
-        if self.expires_at():
+        if self.expires_at:
             return timezone.now() > self.expires_at
         return False
     
     def can_view(self, user):
         if self.is_expired():
             return False
-        
         if self.visibility == self.Visibility.PUBLIC:
             return True
-        
-        if self.Visibility == self.Visibility.UNLISTED:
-            return True
-        
-        if self.visibility == self.Visibility.PRIVATE:
-            return user.is_authenticated and user == self.author
-        
+        if user.is_authenticated:
+            if self.visibility == self.Visibility.UNLISTED:
+                return True
+            if self.author == user:
+                return True
         return False
     
     def get_display_content(self):
