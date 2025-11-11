@@ -4,7 +4,7 @@ from .models import Paste, Comment
 class PasteForm(forms.ModelForm):
     class Meta:
         model = Paste
-        fields = ['title', 'content', 'topic', 'visibility', 'syntax', 'expires_at']
+        fields = ['title', 'content', 'topic', 'visibility', 'expires_at']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -18,7 +18,6 @@ class PasteForm(forms.ModelForm):
             }),
             'topic': forms.Select(attrs={'class': 'form-input'}),
             'visibility': forms.Select(attrs={'class': 'form-input'}),
-            'syntax': forms.Select(attrs={'class': 'form-input'}),
             'expires_at': forms.DateTimeInput(attrs={
                 'class': 'form-input',
                 'type': 'datetime-local'
@@ -29,7 +28,6 @@ class PasteForm(forms.ModelForm):
             'content': 'Содержание',
             'topic': 'Тема',
             'visibility': 'Видимость',
-            'syntax': 'Синтаксис',
             'expires_at': 'Срок действия (необязательно)',
         }
 
@@ -41,8 +39,8 @@ class PasteForm(forms.ModelForm):
         self.fields['topic'].empty_label = "Без темы"
         
         # Устанавливаем начальные значения
-        self.fields['syntax'].initial = 'text'
         self.fields['visibility'].initial = 'public'
+        # УДАЛИТЕ эту строку: self.fields['syntax'].initial = 'text'
         
 class CommentForm(forms.ModelForm):
     class Meta:

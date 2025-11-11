@@ -274,7 +274,7 @@
                     <p>Вы просматриваете пасты в теме "{{ topic.title }}"</p>
                     <div class="auth-buttons">
                         <a href="{% url 'profile' %}" class="btn btn-primary">Мой профиль</a>
-                        <a href="#" class="btn btn-secondary">Создать пасту</a>
+                        <a href="{% url 'create_paste' %}" class="btn btn-secondary">Создать пасту</a>
                     </div>
                 {% else %}
                     <h3>Войдите в систему</h3>
@@ -319,10 +319,10 @@
                             </div>
                             <div class="stats">
                                 <div class="stat">
-                                    {{ paste.views_count }}
+                                    👁️ {{ paste.views_count }}
                                 </div>
-                                <div class="syntax-badge">
-                                    {{ paste.syntax }}
+                                <div class="stat">
+                                    📅 {{ paste.created_at|date:"d.m.Y" }}
                                 </div>
                             </div>
                         </div>
@@ -339,7 +339,7 @@
                     <p>В теме "{{ topic.title }}" пока нет опубликованных паст</p>
                     {% if user.is_authenticated %}
                         <p>Будьте первым, кто добавит пасту в эту тему!</p>
-                        <a href="#" class="btn btn-primary">Создать первую пасту</a>
+                        <a href="{% url 'create_paste' %}" class="btn btn-primary">Создать первую пасту</a>
                     {% else %}
                         <p>Войдите в систему, чтобы создать первую пасту</p>
                         <a href="{% url 'login' %}" class="btn btn-primary">Войти и создать</a>
@@ -359,21 +359,25 @@
                 </div>
                 <div>
                     <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
-                        {{ pastes|dictsortreversed:"views_count"|first.views_count }}
+                        {% with most_viewed=pastes|dictsortreversed:"views_count"|first %}
+                            {{ most_viewed.views_count|default:0 }}
+                        {% endwith %}
                     </div>
                     <div style="color: #718096;">Макс. просмотров</div>
                 </div>
                 <div>
                     <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
-                        {% with authors=pastes|dictsort:"author" %}
-                            {{ authors|length }}
+                        {% with unique_authors=pastes|dictsort:"author.id" %}
+                            {{ unique_authors|length }}
                         {% endwith %}
                     </div>
                     <div style="color: #718096;">Уникальных авторов</div>
                 </div>
                 <div>
                     <div style="font-size: 1.5em; color: #4f46e5; font-weight: bold;">
-                        {{ pastes|dictsortreversed:"created_at"|first.created_at|date:"d.m.Y" }}
+                        {% with latest_paste=pastes|dictsortreversed:"created_at"|first %}
+                            {{ latest_paste.created_at|date:"d.m.Y" }}
+                        {% endwith %}
                     </div>
                     <div style="color: #718096;">Последняя паста</div>
                 </div>

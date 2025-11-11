@@ -51,7 +51,7 @@ class Paste(models.Model):
         default=Visibility.PUBLIC,
         verbose_name="Видимость"
     )
-    syntax = models.CharField(max_length=50, default='text', verbose_name="Синтаксис")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     views_count = models.IntegerField(default=0, verbose_name="Просмотры")
