@@ -10,7 +10,7 @@ def home(request):
     topics = Topic.objects.filter(is_public=True)
     recent_pastes = Paste.objects.filter(
         visibility=Paste.Visibility.PUBLIC
-    ).select_related('author', 'topic')[:5]
+    ).select_related('author', 'topic').order_by('-created_at')[:5]
     
     context = {
         'topics': topics,
@@ -22,6 +22,7 @@ def home(request):
     return render(request, 'pages/home.html', context)
 
 def topic_detail(request, topic_id):
+    """Детали темы со списком паст"""
     topic = get_object_or_404(Topic, id=topic_id, is_public=True)
     pastes = Paste.objects.filter(
         topic=topic,
@@ -35,26 +36,112 @@ def topic_detail(request, topic_id):
     }
     return render(request, 'pages/topic_detail.html', context)
 
+
 def paste_list(request):
     pastes = Paste.objects.filter(
         visibility=Paste.Visibility.PUBLIC
-    ).select_related('author', 'topic')
+    )
+    topic_id = request.GET.get('topic')
+    if topic_id:
+        pastes = pastes.filter(topic_id=topic_id)
+
+    search_query = request.GET.get('q')
+    if search_query:
+        pastes = pastes.filter(
+            Q(title__icontains=search_query) | 
+            Q(content__icontains=search_query) |
+            Q(author__username__icontains=search_query)
+        )
     
+    sort_by = request.GET.sort('sort', 'newest')
+    if sort_by == 'likes':
+        pastes = pastes.order_by('-views_count')
+    elif sort_by == 'likes':
+        pastes = pastes.annotate(like_count=Count('likes')).order_by('-like_count')
+    else:
+        pastes = pastes.order_by('-created_at')
+    
+    pastes = pastes.select_related('author', 'topic')
+
+    topics = Topic.objects.filter(is_public=True)
+
     context = {
         'pastes': pastes,
+        'topics': topics,
+        'current_topic': topic_id,
+        'search_query': search_query or '',
+        'sort_by': sort_by,
     }
-    # Создаем этот файл или используем существующий
+
     return render(request, 'pages/paste_list.html', context)
 
 def paste_detail(request, paste_id):
-    paste = Paste.objects.get(id=paste_id)
+    """Детали пасты с комментариями"""
+    paste = get_object_or_404(Paste, id=paste_id)
+    
+    # Проверяем права доступа
+    if not paste.can_view(request.user):
+        raise Http404("Паста не найдена или у вас нет прав для просмотра")
     
     # Увеличиваем счётчик просмотров
     paste.views_count += 1
     paste.save()
     
+    # Получаем комментарии
+    comments = paste.comments.select_related('author').all()
+    
+    # Проверяем лайк пользователя
+    user_liked = False
+    if request.user.is_authenticated:
+        user_liked = paste.likes.filter(user=request.user).exists()
+    
     context = {
         'paste': paste,
+        'comments': comments,
+        'user_liked': user_liked,
+        'likes_count': paste.likes.count(),
     }
-    # Создаем этот файл или используем существующий
     return render(request, 'pages/paste_detail.html', context)
+
+@login_required
+def like_paste(request, paste_id):
+    """Лайк/анлайк пасты"""
+    paste = get_object_or_404(Paste, id=paste_id)
+    
+    if not paste.can_view(request.user):
+        raise Http404("Паста не найдена")
+    
+    like, created = Like.objects.get_or_create(
+        user=request.user,
+        paste=paste
+    )
+    
+    if not created:
+        like.delete()
+        messages.info(request, 'Лайк удален')
+    else:
+        messages.success(request, 'Паста понравилась!')
+    
+    return redirect('paste_detail', paste_id=paste_id)
+
+@login_required
+def add_comment(request, paste_id):
+    """Добавление комментария к пасте"""
+    paste = get_object_or_404(Paste, id=paste_id)
+    
+    if not paste.can_view(request.user):
+        raise Http404("Паста не найдена")
+    
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if content:
+            Comment.objects.create(
+                paste=paste,
+                author=request.user,
+                content=content
+            )
+            messages.success(request, 'Комментарий добавлен!')
+        else:
+            messages.error(request, 'Комментарий не может быть пустым')
+    
+    return redirect('paste_detail', paste_id=paste_id)
