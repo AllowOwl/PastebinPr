@@ -62,6 +62,14 @@
         .btn-secondary:hover {
             background: #e2e8f0;
         }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+        }
         .paste-content {
             background: white;
             border-radius: 15px;
@@ -229,6 +237,41 @@
             font-size: 0.8em;
             font-family: 'Courier New', monospace;
         }
+        .delete-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .modal-icon {
+            font-size: 3em;
+            color: #dc2626;
+            margin-bottom: 15px;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
         @media (max-width: 768px) {
             .paste-meta {
                 flex-direction: column;
@@ -236,6 +279,9 @@
             }
             .actions {
                 justify-content: center;
+            }
+            .modal-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -271,9 +317,9 @@
                         </div>
                     </div>
                     <div class="paste-stats">
-                        <div class="stat">{{ paste.views_count }}</div>
-                        <div class="stat">{{ likes_count }}</div>
-                        <div class="stat">{{ comments|length }}</div>
+                        <div class="stat">Просмотры: {{ paste.views_count }}</div>
+                        <div class="stat">Лайки: {{ likes_count }}</div>
+                        <div class="stat">Комментарии: {{ comments|length }}</div>
                     </div>
                 </div>
             </div>
@@ -288,7 +334,12 @@
                         </a>
                     {% endif %}
                     <button onclick="copyToClipboard()" class="btn btn-secondary">Копировать</button>
-                    <a href="#" class="btn btn-secondary">Поделиться</a>
+                    <button onclick="sharePaste()" class="btn btn-secondary">Поделиться</button>
+                    
+                    <!-- Кнопка удаления для автора -->
+                    {% if user.is_authenticated and user == paste.author %}
+                        <button onclick="showDeleteModal()" class="btn btn-danger">Удалить</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -345,13 +396,100 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения удаления -->
+    <div class="delete-modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-icon">!</div>
+            <h3 style="color: #2d3748; margin-bottom: 10px;">Удаление пасты</h3>
+            <p style="color: #64748b; margin-bottom: 20px;">
+                Вы уверены, что хотите удалить пасту "{{ paste.title }}"? 
+                Это действие нельзя отменить.
+            </p>
+            <div class="modal-actions">
+                <form method="post" action="{% url 'delete_paste' paste.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Да, удалить</button>
+                </form>
+                <button onclick="hideDeleteModal()" class="btn btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function copyToClipboard() {
             const text = `{{ paste.content }}`;
             navigator.clipboard.writeText(text).then(() => {
-                alert('Текст скопирован в буфер обмена!');
+                showNotification('Текст скопирован в буфер обмена!', 'success');
+            }).catch(() => {
+                showNotification('Не удалось скопировать текст', 'error');
             });
         }
+
+        function sharePaste() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({
+                    title: '{{ paste.title }}',
+                    text: '{{ paste.content|truncatechars:100 }}',
+                    url: url
+                }).catch(() => {
+                    copyUrlToClipboard(url);
+                });
+            } else {
+                copyUrlToClipboard(url);
+            }
+        }
+
+        function copyUrlToClipboard(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showNotification('Ссылка скопирована в буфер обмена!', 'success');
+            }).catch(() => {
+                showNotification('Не удалось скопировать ссылку', 'error');
+            });
+        }
+
+        function showDeleteModal() {
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 10px;
+                color: white;
+                font-weight: 600;
+                z-index: 1001;
+                transition: all 0.3s ease;
+                background: ${type === 'success' ? '#16a34a' : '#dc2626'};
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideDeleteModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideDeleteModal();
+            }
+        });
     </script>
 </body>
 </html>
