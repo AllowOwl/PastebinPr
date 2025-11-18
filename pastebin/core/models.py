@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.db.models import Q
 
 class Topic(models.Model):
     title = models.CharField(max_length=100, verbose_name="Название темы")
@@ -22,13 +23,27 @@ class Topic(models.Model):
         return reverse('topic_detail', kwargs={'topic_id': self.id})
     
     def public_pastes_count(self):
-        return self.pastes.filter(visibility=Paste.Visibility.PUBLIC).count()
+        """Количество активных (не просроченных) публичных паст в теме"""
+        from django.utils import timezone
+        from django.db.models import Q
+        return self.pastes.filter(
+            visibility=Paste.Visibility.PUBLIC
+        ).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        ).count()
+    
+    def update_updated_at(self):
+        """Обновляет поле updated_at при изменении связанных паст"""
+        self.updated_at = timezone.now()
+        self.save(update_fields=['updated_at'])
+
         
 class Paste(models.Model):
     class Visibility(models.TextChoices):
         PUBLIC = 'public', 'Публичная'
         PRIVATE = 'private', 'Приватная'
         UNLISTED = 'unlisted', 'Скрытая'
+    
     title = models.CharField(max_length=100, verbose_name="Заголовок")
     content = models.TextField(verbose_name="Содержание")
     author = models.ForeignKey(
@@ -51,7 +66,7 @@ class Paste(models.Model):
         default=Visibility.PUBLIC,
         verbose_name="Видимость"
     )
-
+    syntax = models.CharField(max_length=50, default='text', verbose_name="Синтаксис")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     views_count = models.IntegerField(default=0, verbose_name="Просмотры")
@@ -83,19 +98,41 @@ class Paste(models.Model):
     def can_view(self, user):
         if self.is_expired():
             return False
+        
         if self.visibility == self.Visibility.PUBLIC:
             return True
-        if user.is_authenticated:
-            if self.visibility == self.Visibility.UNLISTED:
-                return True
-            if self.author == user:
-                return True
+        
+        if self.visibility == self.Visibility.UNLISTED:
+            return True
+        
+        if self.visibility == self.Visibility.PRIVATE:
+            return user.is_authenticated and user == self.author
+        
         return False
+    
+    def can_delete(self, user):
+        """Проверяет, может ли пользователь удалить пасту"""
+        return user.is_authenticated and user == self.author
     
     def get_display_content(self):
         if len(self.content) > 500:
             return self.content[:500] + "..."
         return self.content
+    
+    @classmethod
+    def get_active_pastes(cls):
+        """Возвращает только не просроченные пасты"""
+        return cls.objects.filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        )
+    
+    @classmethod
+    def delete_expired_pastes(cls):
+        """Удаляет все просроченные пасты"""
+        expired_pastes = cls.objects.filter(expires_at__lte=timezone.now())
+        count = expired_pastes.count()
+        expired_pastes.delete()
+        return count
     
 class Comment(models.Model):
     paste = models.ForeignKey(

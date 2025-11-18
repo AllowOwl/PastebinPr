@@ -200,7 +200,7 @@
                     <p>{{ topic.description|default:"Интересные пасты по этой теме" }}</p>
                     <div class="topic-meta">
                         <span>Создана: {{ topic.created_at|date:"d.m.Y" }}</span>
-                        <span class="paste-count">{{ topic.public_pastes_count }} паст</span>
+                        <span class="pastes-count">{{ topic.public_pastes_count }} паст</span>
                     </div>
                     <a href="{% url 'topic_detail' topic.id %}" class="btn btn-primary" style="margin-top: 15px; display: block; text-align: center;">
                         Смотреть пасты

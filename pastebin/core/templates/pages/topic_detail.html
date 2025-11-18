@@ -330,6 +330,16 @@
                         <a href="{% url 'paste_detail' paste.id %}" class="btn btn-primary" style="margin-top: 15px; display: block; text-align: center;">
                             Читать полностью
                         </a>
+                        {% if user.is_authenticated and user == paste.author %}
+                        <form method="post" action="{% url 'delete_paste' paste.id %}" style="margin-top: 10px;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" 
+                                    style="background: #e53e3e; color: white; width: 100%; padding: 8px; font-size: 14px; border: none; border-radius: 8px; cursor: pointer;"
+                                    onclick="return confirm('Вы уверены, что хотите удалить эту пасту?')">
+                                🗑️ Удалить
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>

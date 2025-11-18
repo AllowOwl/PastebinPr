@@ -10,9 +10,10 @@ from .forms import PasteForm, CommentForm
 def home(request):
     """Главная страница со списком тем и информацией о пользователе"""
     topics = Topic.objects.filter(is_public=True)
-    recent_pastes = Paste.objects.filter(
+    recent_pastes = Paste.get_active_pastes().filter(
         visibility=Paste.Visibility.PUBLIC
     ).select_related('author', 'topic').order_by('-created_at')[:5]
+
     
     context = {
         'topics': topics,
@@ -26,10 +27,11 @@ def home(request):
 def topic_detail(request, topic_id):
     """Детали темы со списком паст"""
     topic = get_object_or_404(Topic, id=topic_id, is_public=True)
-    pastes = Paste.objects.filter(
+    pastes = Paste.get_active_pastes().filter(
         topic=topic,
         visibility=Paste.Visibility.PUBLIC
     ).select_related('author').order_by('-created_at')
+
     
     context = {
         'topic': topic,
@@ -40,9 +42,10 @@ def topic_detail(request, topic_id):
 
 
 def paste_list(request):
-    pastes = Paste.objects.filter(
+    pastes = Paste.get_active_pastes().filter(
         visibility=Paste.Visibility.PUBLIC
     )
+
     topic_id = request.GET.get('topic')
     if topic_id:
         pastes = pastes.filter(topic_id=topic_id)
@@ -79,7 +82,7 @@ def paste_list(request):
 
 def paste_detail(request, paste_id):
     """Детали пасты с комментариями"""
-    paste = get_object_or_404(Paste, id=paste_id)
+    paste = get_object_or_404(Paste.get_active_pastes(), id=paste_id)
     
     # Проверяем права доступа
     if not paste.can_view(request.user):
@@ -141,6 +144,36 @@ def create_paste(request):
     return render(request, 'pages/create_paste.html', context)
 
 @login_required
+def delete_paste(request, paste_id):
+    """Удаление пасты"""
+    paste = get_object_or_404(Paste, id=paste_id)
+    
+    # Сохраняем информацию о теме для обновления
+    topic = paste.topic
+    
+    # Проверяем права на удаление
+    if not paste.can_delete(request.user):
+        messages.error(request, 'У вас нет прав для удаления этой пасты')
+        return redirect('paste_detail', paste_id=paste_id)
+    
+    if request.method == 'POST':
+        paste_title = paste.title
+        paste.delete()
+        
+        # Обновляем время обновления темы, если паста была в теме
+        if topic:
+            topic.update_updated_at()
+        
+        messages.success(request, f'Паста "{paste_title}" была успешно удалена')
+        return redirect('home')
+    
+    # Если GET запрос, показываем страницу подтверждения
+    context = {
+        'paste': paste,
+    }
+    return render(request, 'pages/confirm_delete.html', context)
+
+@login_required
 def like_paste(request, paste_id):
     """Лайк/анлайк пасты"""
     paste = get_object_or_404(Paste, id=paste_id)
@@ -169,16 +202,18 @@ def add_comment(request, paste_id):
     if not paste.can_view(request.user):
         raise Http404("Паста не найдена")
     
-    if request.method == 'POST':
-        content = request.POST.get('content', '').strip()
-        if content:
-            Comment.objects.create(
-                paste=paste,
-                author=request.user,
-                content=content
-            )
-            messages.success(request, 'Комментарий добавлен!')
-        else:
-            messages.error(request, 'Комментарий не может быть пустым')
+    if not paste.can_delete(request.user):
+        messages.error(request, 'У вас нет прав для удаления этой пасты')
+        return redirect('paste_detail', paste_id=paste_id)
     
-    return redirect('paste_detail', paste_id=paste_id)
+    if request.method == 'POST':
+        paste_title = paste.title
+        paste.delete()
+        messages.success(request, f'Паста "{paste_title}" была успешно удалена')
+        return redirect('home')
+    
+    # Если GET запрос, показываем страницу подтверждения
+    context = {
+        'paste': paste,
+    }
+    return render(request, 'pages/confirm_delete.html', context)
