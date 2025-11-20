@@ -32,10 +32,11 @@ class Topic(models.Model):
             Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
         ).count()
     
-    def update_updated_at(self):
-        """Обновляет поле updated_at при изменении связанных паст"""
-        self.updated_at = timezone.now()
-        self.save(update_fields=['updated_at'])
+def update_updated_at(self):
+    """Обновляет поле updated_at при изменении связанных паст"""
+    from django.utils import timezone
+    self.updated_at = timezone.now()
+    self.save(update_fields=['updated_at'])
 
         
 class Paste(models.Model):

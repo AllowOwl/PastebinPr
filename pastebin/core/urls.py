@@ -9,4 +9,5 @@ urlpatterns = [
     path('pastes/<int:paste_id>/like/', views.like_paste, name='like_paste'),
     path('pastes/<int:paste_id>/comment/', views.add_comment, name='add_comment'),
     path('topics/<int:topic_id>/', views.topic_detail, name='topic_detail'),
+    path('pastes/<int:paste_id>/delete/', views.delete_paste, name='delete_paste'),
 ]
