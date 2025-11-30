@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль - Pastebin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .user-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .info-value {
+            color: #2d3748;
+        }
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .role-user {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+        .role-moderator {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .role-admin {
+            background: #fecaca;
+            color: #dc2626;
+        }
+        .messages {
+            margin-bottom: 25px;
+        }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+        .alert-success {
+            background: #f0fdf4;
+            border-color: #16a34a;
+            color: #166534;
+        }
+        .admin-links {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Навигация -->
+        <div class="navigation">
+            <a href="{% url 'home' %}" class="btn btn-secondary">← На главную</a>
+            <a href="{% url 'logout' %}" class="btn btn-secondary">Выйти</a>
+        </div>
+
+        <!-- Шапка -->
+        <div class="profile-card">
+            <div class="header">
+                <h1>Мой профиль</h1>
+                <p style="color: #718096;">Управление вашими данными</p>
+            </div>
+
+            <!-- Сообщения -->
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Информация о пользователе -->
+            <div class="user-info">
+                <div class="info-item">
+                    <span class="info-label">Имя пользователя:</span>
+                    <span class="info-value">{{ user.username }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Роль:</span>
+                    <span class="role-badge role-{{ user.role }}">{{ user.get_role_display }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Дата регистрации:</span>
+                    <span class="info-value">{{ user.date_joined|date:"d.m.Y H:i" }}</span>
+                </div>
+                {% if user.bio %}
+                <div class="info-item">
+                    <span class="info-label">О себе:</span>
+                    <span class="info-value">{{ user.bio }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Форма редактирования -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="id_username">Имя пользователя:</label>
+                    {{ form.username }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_email">Email:</label>
+                    {{ form.email }}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_bio">О себе:</label>
+                    {{ form.bio }}
+                </div>
+
+                {% if user.is_admin %}
+                <div class="form-group">
+                    <label for="id_role">Роль:</label>
+                    {{ form.role }}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </form>
+
+            <!-- Ссылки для админов -->
+            {% if user.is_admin %}
+                <div class="admin-links">
+                    <a href="{% url 'admin_panel' %}" class="btn btn-primary">Админ-панель</a>
+                </div>
+            {% endif %}
+
+            {% if user.is_moderator %}
+                <div class="admin-links">
+                    <a href="{% url 'moderator_panel' %}" class="btn btn-primary">Панель модератора</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
