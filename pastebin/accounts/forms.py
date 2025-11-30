@@ -1,6 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from django.contrib.auth import get_user_model
+
+# Получаем модель пользователя после ее определения
+CustomUser = get_user_model()
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(
@@ -58,5 +61,5 @@ class UserEditForm(forms.ModelForm):
         if not self.instance.is_admin():
             self.fields['role'].choices = [
                 (CustomUser.Role.USER, 'Пользователь'),
-                (CustomUser.Role.MODDERATOR, 'Модератор'),
+                (CustomUser.Role.MODERATOR, 'Модератор'),
             ]

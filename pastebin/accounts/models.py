@@ -5,7 +5,7 @@ class CustomUser(AbstractUser):
     class Role(models.TextChoices):
         USER = 'user', 'Пользователь'
         ADMIN = 'admin', 'Администратор'
-        MODDERATOR = 'moderator', 'Модерация'
+        MODERATOR = 'moderator', 'Модератор'  # Исправлено с MODDERATOR на MODERATOR
 
     role = models.CharField(
         max_length=30,
@@ -14,7 +14,6 @@ class CustomUser(AbstractUser):
     )
 
     bio = models.TextField(max_length=500, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
@@ -26,4 +25,4 @@ class CustomUser(AbstractUser):
         return self.role == self.Role.ADMIN
     
     def is_moderator(self):
-        return self.role == self.Role.MODDERATOR
+        return self.role == self.Role.MODERATOR
